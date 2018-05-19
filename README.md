@@ -50,3 +50,7 @@ Implement different approach to render `Switch`.
 ## 13 Use prop Getters with Render
 
 Handle custom `onClick` and native method in the same component. Composing actions in the `Toggle` component.
+
+## 14 Use Component state initializers
+
+Allow set initial state outside and reset to initial state meanwhile by `reset` action.
