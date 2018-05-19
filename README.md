@@ -40,3 +40,7 @@ Add additional prop `WrappedComponent` inside HOC to make tests
 ## 10 static properties
 
 Use external method `hoistNonReactStatics` to render static
+
+## 11 use render props
+
+Implement different approach to render `Switch`.
