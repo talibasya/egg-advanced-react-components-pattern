@@ -79,6 +79,8 @@
     <div id="⚛️"></div>
     
     <script type="text/babel">
+    const compose = (...fns) => (...args) =>
+      fns.forEach(fn => fn && fn(...args))
     class Toggle extends React.Component {
       static defaultProps = {onToggle: () => {}}
       state = {on: false}
@@ -91,30 +93,25 @@
         return this.props.render({
           on: this.state.on,
           toggle: this.toggle,
+          togglerProps: {
+            'aria-expanded': this.state.on,
+            onClick: this.toggle,
+          },
         })
       }
-    }
-    
-    function MyToggle({on, toggle}) {
-      return (
-        <button onClick={toggle}>
-          {on ? 'on' : 'off'}
-        </button>
-      )
     }
     
     function App() {
       return (
         <Toggle
           onToggle={on => console.log('toggle', on)}
-          render={({on, toggle}) => (
+          render={({on, toggle, togglerProps}) => (
             <div>
-              {on
-                ? 'The button is on'
-                : 'The button is off'}
-              <Switch on={on} onClick={toggle} />
+              <Switch on={on} {...togglerProps} />
               <hr />
-              <MyToggle on={on} toggle={toggle} />
+              <button {...togglerProps}>
+                {on ? 'on' : 'off'}
+              </button>
             </div>
           )}
         />
@@ -141,7 +138,6 @@
             className={`${className} toggle-btn ${on
               ? 'toggle-btn-on'
               : 'toggle-btn-off'}`}
-            aria-expanded={on}
             {...props}
           />
         </div>

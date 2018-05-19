@@ -44,3 +44,6 @@ Use external method `hoistNonReactStatics` to render static
 ## 11 use render props
 
 Implement different approach to render `Switch`.
+
+## 12 Use prop collections with Render
+
