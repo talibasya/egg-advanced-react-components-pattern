@@ -32,3 +32,7 @@ Add prop `displayName` for debugging app.
 ## 8 handle ref with HOC
 
 Make hoc handle ref (via property `innerRef`)
+
+## 9 unit testability for HOC
+
+Add additional prop `WrappedComponent` inside HOC to make tests
