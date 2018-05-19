@@ -54,3 +54,6 @@ Handle custom `onClick` and native method in the same component. Composing actio
 ## 14 Use Component state initializers
 
 Allow set initial state outside and reset to initial state meanwhile by `reset` action.
+
+## 15 make controlled react components
+
