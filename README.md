@@ -25,4 +25,6 @@ Create Higher Order Components.
 
 Avoiding overide props by making extra prop inside.
 
-## 7 
+## 7 debuggability in HOC
+
+Add prop `displayName` for debugging app.

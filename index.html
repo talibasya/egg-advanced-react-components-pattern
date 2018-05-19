@@ -81,31 +81,24 @@
     
     <script type="text/babel">
     const TOGGLE_CONTEXT = '__toggle__'
-    const ToggleOn = withToggle(
-      ({children, toggle: {on}}) => {
-        return on ? children : null
-      },
-    )
-    const ToggleOff = withToggle(
-      ({children, toggle: {on}}) => {
-        return on ? null : children
-      },
-    )
-    const ToggleButton = withToggle(
-      ({toggle: {on, toggle}, ...props}) => {
-        return (
-          <Switch
-            on={on}
-            onClick={toggle}
-            {...props}
-          />
-        )
-      },
-    )
+    const ToggleOn = ({children, toggle: {on}}) => {
+      return on ? children : null
+    }
+    const ToggleOff = ({children, toggle: {on}}) => {
+      return on ? null : children
+    }
+    const ToggleButton = ({
+      toggle: {on, toggle},
+      ...props
+    }) => {
+      return (
+        <Switch on={on} onClick={toggle} {...props} />
+      )
+    }
     class Toggle extends React.Component {
-      static On = ToggleOn
-      static Off = ToggleOff
-      static Button = ToggleButton
+      static On = withToggle(ToggleOn)
+      static Off = withToggle(ToggleOff)
+      static Button = withToggle(ToggleButton)
       static defaultProps = {onToggle: () => {}}
       static childContextTypes = {
         [TOGGLE_CONTEXT]: PropTypes.object.isRequired,
@@ -143,27 +136,17 @@
       Wrapper.contextTypes = {
         [TOGGLE_CONTEXT]: PropTypes.object.isRequired,
       }
+      Wrapper.displayName = `withToggle(${Component.displayName ||
+        Component.name})`
       return Wrapper
     }
     
-    const MyEventComponent = withToggle(
-      function MyEventComponent({toggle, on, event}) {
-        const props = {[event]: on}
-        return toggle.on ? (
-          <button {...props}>
-            The {event} event
-          </button>
-        ) : null
-      },
+    const MyToggle = ({toggle: {on, toggle}}) => (
+      <button onClick={toggle}>
+        {on ? 'on' : 'off'}
+      </button>
     )
-    
-    const MyToggle = withToggle(
-      ({toggle: {on, toggle}}) => (
-        <button onClick={toggle}>
-          {on ? 'on' : 'off'}
-        </button>
-      ),
-    )
+    const MyToggleWrapper = withToggle(MyToggle)
     
     function App() {
       return (
@@ -174,12 +157,7 @@
           <Toggle.Off>The button is off</Toggle.Off>
           <Toggle.Button />
           <hr />
-          <MyToggle />
-          <hr />
-          <MyEventComponent
-            event="onClick"
-            on={e => alert(e.type)}
-          />
+          <MyToggleWrapper />
         </Toggle>
       )
     }
