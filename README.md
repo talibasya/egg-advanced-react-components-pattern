@@ -28,3 +28,7 @@ Avoiding overide props by making extra prop inside.
 ## 7 debuggability in HOC
 
 Add prop `displayName` for debugging app.
+
+## 8 handle ref with HOC
+
+Make hoc handle ref (via property `innerRef`)

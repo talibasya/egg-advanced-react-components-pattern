@@ -124,11 +124,15 @@
     }
     
     function withToggle(Component) {
-      function Wrapper(props, context) {
+      function Wrapper(
+        {innerRef, ...props},
+        context,
+      ) {
         const toggleContext = context[TOGGLE_CONTEXT]
         return (
           <Component
             {...props}
+            ref={innerRef}
             toggle={toggleContext}
           />
         )
@@ -141,25 +145,41 @@
       return Wrapper
     }
     
-    const MyToggle = ({toggle: {on, toggle}}) => (
-      <button onClick={toggle}>
-        {on ? 'on' : 'off'}
-      </button>
-    )
+    class MyToggle extends React.Component {
+      focus = () => this.button.focus()
+      render() {
+        const {toggle: {on, toggle}} = this.props
+        return (
+          <button
+            onClick={toggle}
+            ref={button => (this.button = button)}
+          >
+            {on ? 'on' : 'off'}
+          </button>
+        )
+      }
+    }
+    
     const MyToggleWrapper = withToggle(MyToggle)
     
-    function App() {
-      return (
-        <Toggle
-          onToggle={on => console.log('toggle', on)}
-        >
-          <Toggle.On>The button is on</Toggle.On>
-          <Toggle.Off>The button is off</Toggle.Off>
-          <Toggle.Button />
-          <hr />
-          <MyToggleWrapper />
-        </Toggle>
-      )
+    class App extends React.Component {
+      render() {
+        return (
+          <Toggle
+            onToggle={on =>
+              on ? this.myToggle.focus() : null}
+          >
+            <Toggle.On>The button is on</Toggle.On>
+            <Toggle.Off>The button is off</Toggle.Off>
+            <Toggle.Button />
+            <hr />
+            <MyToggleWrapper
+              innerRef={myToggle =>
+                (this.myToggle = myToggle)}
+            />
+          </Toggle>
+        )
+      }
     }
     
     /*
