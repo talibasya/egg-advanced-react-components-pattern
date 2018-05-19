@@ -47,3 +47,6 @@ Implement different approach to render `Switch`.
 
 ## 12 Use prop collections with Render
 
+## 13 Use prop Getters with Render
+
+Handle custom `onClick` and native method in the same component. Composing actions in the `Toggle` component.
