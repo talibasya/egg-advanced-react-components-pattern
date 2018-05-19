@@ -20,3 +20,9 @@ In this case you can put your components regardless to deep level.
 ## 5. Make Enchanced Components with HOC
 
 Create Higher Order Components.
+
+## 6. Handle prop namespace clashes with Higher Order Components
+
+Avoiding overide props by making extra prop inside.
+
+## 7 
