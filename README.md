@@ -36,3 +36,7 @@ Make hoc handle ref (via property `innerRef`)
 ## 9 unit testability for HOC
 
 Add additional prop `WrappedComponent` inside HOC to make tests
+
+## 10 static properties
+
+Use external method `hoistNonReactStatics` to render static

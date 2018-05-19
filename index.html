@@ -76,6 +76,7 @@
     <script src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/prop-types@15.6.0/prop-types.js"></script>
     <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+    <script src="https://cdn.rawgit.com/kentcdodds/ea2fdfc82f79228a6be641c78dc0e1b9/raw/0f792eb8dfb3bf993bdf50c9656f12090ed344e6/hoist-non-react-statics.umd.js"></script>
     
     <div id="⚛️"></div>
     
@@ -143,41 +144,28 @@
       Wrapper.displayName = `withToggle(${Component.displayName ||
         Component.name})`
       Wrapper.WrappedComponent = Component
-      return Wrapper
+    
+      return hoistNonReactStatics(Wrapper, Component)
     }
     
-    const MyToggle = ({toggle: {on, toggle}}) => (
-      <button onClick={toggle}>
-        {on ? 'on' : 'off'}
-      </button>
-    )
-    const MyToggleWrapper = withToggle(MyToggle)
-    
-    function test() {
-      const div = document.createElement('div')
-      document.body.appendChild(div)
-      const toggle = () => (toggle.called = true)
-      ReactDOM.render(
-        <MyToggleWrapper.WrappedComponent
-          toggle={{on: true, toggle}}
-        />,
-        div,
+    class MyToggle extends React.Component {
+      static ToggleMessage = withToggle(
+        ({toggle: {on}}) =>
+          on
+            ? 'Warning: The button is toggled on'
+            : null,
       )
-      if (!div.innerHTML.includes('on')) {
-        throw new Error(
-          `Contents are wrong: ${div.innerHTML}`,
+      render() {
+        const {toggle: {on, toggle}} = this.props
+        return (
+          <button onClick={toggle}>
+            {on ? 'on' : 'off'}
+          </button>
         )
       }
-      const button = div.getElementsByTagName(
-        'button',
-      )[0]
-      button.click()
-      if (!toggle.called) {
-        throw new Error('toggle not called!')
-      }
     }
     
-    test()
+    const MyToggleWrapper = withToggle(MyToggle)
     
     function App() {
       return (
@@ -189,6 +177,8 @@
           <Toggle.Button />
           <hr />
           <MyToggleWrapper />
+          <hr />
+          <MyToggleWrapper.ToggleMessage />
         </Toggle>
       )
     }
