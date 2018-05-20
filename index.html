@@ -76,6 +76,7 @@
     <script src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/prop-types@15.6.0/prop-types.js"></script>
     <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+    <script src="https://unpkg.com/react-broadcast@0.5.2/umd/react-broadcast.js"></script>
     <script src="https://cdn.rawgit.com/kentcdodds/ea2fdfc82f79228a6be641c78dc0e1b9/raw/0f792eb8dfb3bf993bdf50c9656f12090ed344e6/hoist-non-react-statics.umd.js"></script>
     
     <div id="⚛️"></div>
@@ -94,7 +95,7 @@
       state = this.initialState
       reset = () => {
         if (this.isOnControlled()) {
-          this.props.onReset(!this.props.on)
+          this.props.onReset()
         } else {
           this.setState(this.initialState, () =>
             this.props.onReset(this.state.on),
@@ -103,7 +104,7 @@
       }
       toggle = () => {
         if (this.isOnControlled()) {
-          this.props.onToggle(!this.props.on)
+          this.props.onToggle()
         } else {
           this.setState(
             ({on}) => ({on: !on}),
@@ -111,6 +112,7 @@
           )
         }
       }
+    
       getTogglerProps = (
         {onClick, ...props} = {},
       ) => ({
@@ -126,30 +128,15 @@
           on: this.isOnControlled()
             ? this.props.on
             : this.state.on,
+          getTogglerProps: this.getTogglerProps,
           toggle: this.toggle,
           reset: this.reset,
-          getTogglerProps: this.getTogglerProps,
         })
       }
     }
     
     class ToggleProvider extends React.Component {
-      static contextName = '__toggle__'
-      static Renderer = class extends React.Component {
-        static childContextTypes = {
-          [ToggleProvider.contextName]:
-            PropTypes.object.isRequired,
-        }
-        getChildContext() {
-          return {
-            [ToggleProvider.contextName]: this.props
-              .toggle,
-          }
-        }
-        render() {
-          return this.props.children
-        }
-      }
+      static channel = '__toggle_channel__'
       render() {
         const {
           children,
@@ -159,10 +146,12 @@
           <Toggle
             {...remainingProps}
             render={toggle => (
-              <ToggleProvider.Renderer
-                toggle={toggle}
-                children={children}
-              />
+              <ReactBroadcast.Broadcast
+                channel={ToggleProvider.channel}
+                value={toggle}
+              >
+                {children}
+              </ReactBroadcast.Broadcast>
             )}
           />
         )
@@ -170,13 +159,13 @@
     }
     
     function ConnectedToggle(props, context) {
-      return props.render(
-        context[ToggleProvider.contextName],
+      return (
+        <ReactBroadcast.Subscriber
+          channel={ToggleProvider.channel}
+        >
+          {toggle => props.render(toggle)}
+        </ReactBroadcast.Subscriber>
       )
-    }
-    ConnectedToggle.contextTypes = {
-      [ToggleProvider.contextName]:
-        PropTypes.object.isRequired,
     }
     
     function withToggle(Component) {
@@ -201,19 +190,23 @@
       return hoistNonReactStatics(Wrapper, Component)
     }
     
-    const Subtitle = withToggle(
-      ({toggle}) =>
-        toggle.on
-          ? '👩‍🏫 👉 🕶'
-          : 'Teachers are awesome',
-    )
+    class UpdateBlocker extends React.Component {
+      shouldComponentUpdate() {
+        return false
+      }
+      render() {
+        return this.props.children
+      }
+    }
     
     function App() {
       return (
         <ToggleProvider>
           <div>
             <Header />
-            <Post />
+            <UpdateBlocker>
+              <Post />
+            </UpdateBlocker>
           </div>
         </ToggleProvider>
       )
@@ -306,6 +299,17 @@
             <NavSwitch />
           </div>
         </div>
+      )
+    }
+    
+    function Subtitle() {
+      return (
+        <ConnectedToggle
+          render={toggle =>
+            toggle.on
+              ? '👩‍🏫 👉 🕶'
+              : 'Teachers are awesome'}
+        />
       )
     }
     

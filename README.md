@@ -60,3 +60,7 @@ Allow set initial state outside and reset to initial state meanwhile by `reset` 
 ## 16 implement context provider
 
 ## 17 HOC with redner props
+
+## 18 Rerender Descendants Through shouldComponentUpdate
+
+Using `ReactBroadcast`
