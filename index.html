@@ -76,6 +76,7 @@
     <script src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/prop-types@15.6.0/prop-types.js"></script>
     <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+    <script src="https://cdn.rawgit.com/kentcdodds/ea2fdfc82f79228a6be641c78dc0e1b9/raw/0f792eb8dfb3bf993bdf50c9656f12090ed344e6/hoist-non-react-statics.umd.js"></script>
     
     <div id="⚛️"></div>
     
@@ -178,6 +179,55 @@
         PropTypes.object.isRequired,
     }
     
+    function withToggle(Component) {
+      function Wrapper(props, context) {
+        const {innerRef, ...remainingProps} = props
+        return (
+          <ConnectedToggle
+            render={toggle => (
+              <Component
+                {...remainingProps}
+                toggle={toggle}
+                ref={innerRef}
+              />
+            )}
+          />
+        )
+      }
+      Wrapper.displayName = `withToggle(${Component.displayName ||
+        Component.name})`
+      Wrapper.propTypes = {innerRef: PropTypes.func}
+      Wrapper.WrappedComponent = Component
+      return hoistNonReactStatics(Wrapper, Component)
+    }
+    
+    const Subtitle = withToggle(
+      ({toggle}) =>
+        toggle.on
+          ? '👩‍🏫 👉 🕶'
+          : 'Teachers are awesome',
+    )
+    
+    function App() {
+      return (
+        <ToggleProvider>
+          <div>
+            <Header />
+            <Post />
+          </div>
+        </ToggleProvider>
+      )
+    }
+    
+    /*
+     *
+     *
+     * Below here are irrelevant
+     * implementation details...
+     *
+     *
+     */
+    
     function Nav() {
       return (
         <ConnectedToggle
@@ -259,17 +309,6 @@
       )
     }
     
-    function Subtitle() {
-      return (
-        <ConnectedToggle
-          render={toggle =>
-            toggle.on
-              ? '👩‍🏫 👉 🕶'
-              : 'Teachers are awesome'}
-        />
-      )
-    }
-    
     function Title() {
       return (
         <div>
@@ -323,26 +362,6 @@
       )
     }
     
-    function App() {
-      return (
-        <ToggleProvider>
-          <div>
-            <Header />
-            <Post />
-          </div>
-        </ToggleProvider>
-      )
-    }
-    
-    /*
-     *
-     *
-     * Below here are irrelevant
-     * implementation details...
-     *
-     *
-     */
-    
     function Switch({on, className = '', ...props}) {
       return (
         <div className="toggle">
@@ -361,7 +380,17 @@
     }
     
     ReactDOM.render(
-      <App />,
+      <div
+        style={{
+          marginTop: 40,
+          display: 'flex',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          textAlign: 'center',
+        }}
+      >
+        <App />
+      </div>,
       document.getElementById('⚛️'),
     )
     </script>
