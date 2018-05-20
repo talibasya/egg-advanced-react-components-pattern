@@ -14,11 +14,11 @@
     }
     
     /*
-    toggle styles copied and modified from
+    rendux styles copied and modified from
     https://codepen.io/mallendeo/pen/eLIiG
     by Mauricio Allende (https://mallendeo.com/)
      */
-    .toggle-btn {
+    .rendux-btn {
       display: inline-block;
       outline: 0;
       width: 4em;
@@ -32,13 +32,13 @@
       transition: all 0.4s ease;
       border: 1px solid #e8eae9;
     }
-    .toggle-btn:focus::after,
-    .toggle-btn:active::after {
+    .rendux-btn:focus::after,
+    .rendux-btn:active::after {
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1),
         0 4px 0 rgba(0, 0, 0, 0.08),
         inset 0px 0px 0px 1.5px #9c9c9c;
     }
-    .toggle-btn::after {
+    .rendux-btn::after {
       left: 0;
       position: relative;
       display: block;
@@ -53,22 +53,22 @@
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1),
         0 4px 0 rgba(0, 0, 0, 0.08);
     }
-    .toggle-btn.toggle-btn-on::after {
+    .rendux-btn.rendux-btn-on::after {
       left: 50%;
     }
-    .toggle-btn.toggle-btn-on {
+    .rendux-btn.rendux-btn-on {
       background: #86d993;
     }
-    .toggle-btn.toggle-btn-on:active {
+    .rendux-btn.rendux-btn-on:active {
       box-shadow: none;
     }
-    .toggle-btn.toggle-btn-on:active::after {
+    .rendux-btn.rendux-btn-on:active::after {
       margin-left: -0.8em;
     }
-    .toggle-btn:active::after {
+    .rendux-btn:active::after {
       padding-right: 0.8em;
     }
-    .toggle-input {
+    .rendux-input {
       display: none;
     }
     </style>
@@ -78,6 +78,7 @@
     <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
     <script src="https://unpkg.com/react-broadcast@0.5.2/umd/react-broadcast.js"></script>
     <script src="https://cdn.rawgit.com/kentcdodds/ea2fdfc82f79228a6be641c78dc0e1b9/raw/0f792eb8dfb3bf993bdf50c9656f12090ed344e6/hoist-non-react-statics.umd.js"></script>
+    <script src="https://unpkg.com/redux@3.7.2/dist/redux.js"></script>
     
     <div id="⚛️"></div>
     
@@ -85,70 +86,70 @@
     const compose = (...fns) => (...args) =>
       fns.forEach(fn => fn && fn(...args))
     
-    class Toggle extends React.Component {
+    class Rendux extends React.Component {
       static defaultProps = {
-        defaultOn: false,
-        onToggle: () => {},
+        initialState: {},
+        onUpdate: () => {},
         onReset: () => {},
+        reducer: state => state,
       }
-      initialState = {on: this.props.defaultOn}
+      initialState = this.props.initialState
+      rootReducer = (state, action) => {
+        if (action.type === '__RENDUX_RESET__') {
+          return this.initialState
+        }
+        return this.props.reducer(state, action)
+      }
+      store = Redux.createStore(
+        this.rootReducer,
+        this.initialState,
+      )
       state = this.initialState
       reset = () => {
-        if (this.isOnControlled()) {
-          this.props.onReset()
+        if (this.isStateControlled()) {
+          this.props.onReset(this.initialState)
         } else {
-          this.setState(this.initialState, () =>
-            this.props.onReset(this.state.on),
-          )
+          this.store.dispatch({
+            type: '__RENDUX_RESET__',
+          })
         }
       }
-      toggle = () => {
-        if (this.isOnControlled()) {
-          this.props.onToggle()
-        } else {
-          this.setState(
-            ({on}) => ({on: !on}),
-            () => this.props.onToggle(this.state.on),
-          )
-        }
+      componentDidMount() {
+        this.unsubscribe = this.store.subscribe(() =>
+          this.setState(this.store.getState()),
+        )
       }
-    
-      getTogglerProps = (
-        {onClick, ...props} = {},
-      ) => ({
-        onClick: compose(onClick, this.toggle),
-        'aria-expanded': this.state.on,
-        ...props,
-      })
-      isOnControlled() {
-        return this.props.on !== undefined
+      componentWillUnmount() {
+        this.unsubscribe()
+      }
+      isStateControlled() {
+        return this.props.state !== undefined
       }
       render() {
         return this.props.render({
-          on: this.isOnControlled()
-            ? this.props.on
-            : this.state.on,
-          getTogglerProps: this.getTogglerProps,
-          toggle: this.toggle,
+          state: this.isStateControlled()
+            ? this.props.state
+            : this.store.getState(),
+          dispatch: this.store.dispatch,
           reset: this.reset,
         })
       }
     }
     
-    class ToggleProvider extends React.Component {
-      static channel = '__toggle_channel__'
+    class RenduxProvider extends React.Component {
+      static channel = '__rendux_channel__'
       render() {
         const {
           children,
           ...remainingProps
         } = this.props
         return (
-          <Toggle
+          <Rendux
             {...remainingProps}
-            render={toggle => (
+            render={rendux => (
               <ReactBroadcast.Broadcast
-                channel={ToggleProvider.channel}
-                value={toggle}
+                channel={RenduxProvider.channel}
+                value={rendux}
               >
                 {children}
               </ReactBroadcast.Broadcast>
@@ -158,32 +159,32 @@
       }
     }
     
-    function ConnectedToggle(props, context) {
+    function ConnectedRendux(props, context) {
       return (
         <ReactBroadcast.Subscriber
-          channel={ToggleProvider.channel}
+          channel={RenduxProvider.channel}
         >
-          {toggle => props.render(toggle)}
+          {rendux => props.render(rendux)}
         </ReactBroadcast.Subscriber>
       )
     }
     
-    function withToggle(Component) {
+    function withRendux(Component) {
       function Wrapper(props, context) {
         const {innerRef, ...remainingProps} = props
         return (
-          <ConnectedToggle
-            render={toggle => (
+          <ConnectedRendux
+            render={rendux => (
               <Component
                 {...remainingProps}
-                toggle={toggle}
+                rendux={rendux}
                 ref={innerRef}
               />
             )}
           />
         )
       }
-      Wrapper.displayName = `withToggle(${Component.displayName ||
+      Wrapper.displayName = `withRendux(${Component.displayName ||
         Component.name})`
       Wrapper.propTypes = {innerRef: PropTypes.func}
       Wrapper.WrappedComponent = Component
@@ -199,16 +200,110 @@
       }
     }
     
+    function MyInput() {
+      return (
+        <ConnectedRendux
+          render={rendux => (
+            <input
+              defaultValue={
+                rendux.state.on ? 'on' : 'off'
+              }
+              placeholder="Type 'off' or 'on'"
+              onChange={event => {
+                if (event.target.value === 'on') {
+                  rendux.dispatch({
+                    type: 'toggle',
+                    value: true,
+                  })
+                } else if (
+                  event.target.value === 'off'
+                ) {
+                  rendux.dispatch({
+                    type: 'toggle',
+                    value: false,
+                  })
+                }
+                rendux.dispatch({
+                  type: 'input_change',
+                  value: event.target.value,
+                })
+              }}
+            />
+          )}
+        />
+      )
+    }
+    
+    function MySwitch() {
+      return (
+        <ConnectedRendux
+          render={rendux => (
+            <div
+              style={{
+                marginTop: 20,
+                marginBottom: 20,
+              }}
+            >
+              <Switch
+                on={rendux.state.on}
+                onClick={() =>
+                  rendux.dispatch({
+                    type: 'toggle',
+                    value: !rendux.state.on,
+                  })}
+              />
+            </div>
+          )}
+        />
+      )
+    }
+    
+    function StatePrinter() {
+      return (
+        <ConnectedRendux
+          render={rendux => (
+            <div style={{textAlign: 'left'}}>
+              state:
+              <pre>
+                {JSON.stringify(
+                  rendux.state,
+                  null,
+                  2,
+                )}
+              </pre>
+            </div>
+          )}
+        />
+      )
+    }
+    
     function App() {
       return (
-        <ToggleProvider>
-          <div>
-            <Header />
-            <UpdateBlocker>
-              <Post />
-            </UpdateBlocker>
-          </div>
-        </ToggleProvider>
+        <RenduxProvider
+          initialState={{on: true}}
+          reducer={(state, action) => {
+            switch (action.type) {
+              case 'toggle':
+                return {
+                  ...state,
+                  on: action.value,
+                }
+              case 'input_change':
+                return {
+                  ...state,
+                  inputValue: action.value,
+                }
+              default:
+                return state
+            }
+          }}
+        >
+          <UpdateBlocker>
+            <MyInput />
+            <MySwitch />
+            <StatePrinter />
+          </UpdateBlocker>
+        </RenduxProvider>
       )
     }
     
@@ -221,162 +316,17 @@
      *
      */
     
-    function Nav() {
-      return (
-        <ConnectedToggle
-          render={toggle => (
-            <nav style={{flex: 1}}>
-              <ul
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-around',
-                  listStyle: 'none',
-                  paddingLeft: '0',
-                }}
-              >
-                <li>
-                  <a href="index.html">
-                    {toggle.on ? '🏡' : 'Home'}
-                  </a>
-                </li>
-                <li>
-                  <a href="/about/">
-                    {toggle.on ? '❓' : 'About'}
-                  </a>
-                </li>
-                <li>
-                  <a href="/blog/">
-                    {toggle.on ? '📖' : 'Blog'}
-                  </a>
-                </li>
-              </ul>
-            </nav>
-          )}
-        />
-      )
-    }
-    
-    function NavSwitch() {
-      return (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            textAlign: 'center',
-          }}
-        >
-          <div>
-            <ConnectedToggle
-              render={toggle =>
-                toggle.on ? '🦄' : 'Enable Emoji'}
-            />
-          </div>
-          <ConnectedToggle
-            render={toggle => (
-              <Switch
-                {...toggle.getTogglerProps({
-                  on: toggle.on,
-                })}
-              />
-            )}
-          />
-        </div>
-      )
-    }
-    
-    function Header() {
-      return (
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-around',
-              alignItems: 'center',
-            }}
-          >
-            <Nav />
-            <NavSwitch />
-          </div>
-        </div>
-      )
-    }
-    
-    function Subtitle() {
-      return (
-        <ConnectedToggle
-          render={toggle =>
-            toggle.on
-              ? '👩‍🏫 👉 🕶'
-              : 'Teachers are awesome'}
-        />
-      )
-    }
-    
-    function Title() {
-      return (
-        <div>
-          <h1>
-            <ConnectedToggle
-              render={toggle =>
-                `Who is ${toggle.on
-                  ? '🕶❓'
-                  : 'awesome?'}`}
-            />
-          </h1>
-          <Subtitle />
-        </div>
-      )
-    }
-    
-    function Article() {
-      return (
-        <div>
-          <ConnectedToggle
-            render={toggle =>
-              [
-                'Once, I was in',
-                toggle.on ? '🏫‍' : 'school',
-                'when I',
-                toggle.on ? '🤔' : 'realized',
-                'something...',
-              ].join(' ')}
-          />
-          <hr />
-          <ConnectedToggle
-            render={toggle =>
-              [
-                'Without',
-                toggle.on ? '👩‍🏫' : 'teachers',
-                `I wouldn't know anything so`,
-                toggle.on ? '🙏' : 'thanks',
-                toggle.on ? '👩‍🏫❗️' : 'teachers!',
-              ].join(' ')}
-          />
-        </div>
-      )
-    }
-    
-    function Post() {
-      return (
-        <div>
-          <Title />
-          <Article />
-        </div>
-      )
-    }
-    
     function Switch({on, className = '', ...props}) {
       return (
-        <div className="toggle">
+        <div className="rendux">
           <input
-            className="toggle-input"
+            className="rendux-input"
             type="checkbox"
           />
           <button
-            className={`${className} toggle-btn ${on
-              ? 'toggle-btn-on'
-              : 'toggle-btn-off'}`}
+            className={`${className} rendux-btn ${on
+              ? 'rendux-btn-on'
+              : 'rendux-btn-off'}`}
             {...props}
           />
         </div>

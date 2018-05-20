@@ -64,3 +64,5 @@ Allow set initial state outside and reset to initial state meanwhile by `reset` 
 ## 18 Rerender Descendants Through shouldComponentUpdate
 
 Using `ReactBroadcast`
+
+## 19 with Redux
